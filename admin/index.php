@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </form>
         
         <div class="back-link">
-            <a href="../index.html">&laquo; Back to Main Site</a>
+            <a href="../index.html">&laquo; Back to Home</a>
         </div>
     </div>
 
