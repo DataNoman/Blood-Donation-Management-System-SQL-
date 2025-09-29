@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloodConnect - Save Lives Together</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>BloodConnect</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#about" class="nav-link">About</a></li>
+                <li><a href="donors/index.php" class="nav-link">Donate</a></li>
+                <li><a href="receiver/index.php" class="nav-link">Request</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+                <li><a href="admin/index.php" class="nav-link login-btn" id="loginBtn">Login</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section 
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Every Drop Counts, Every Life Matters</h1>
+                <p>Join us to create Bangladesh's largest blood donation network. Connect donors with those in need and save lives in your community.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" id="donateNowBtn">Donate Blood</button>
+                    <button class="btn btn-secondary" id="requestBloodBtn">Request Blood</button>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="blood-drop-animation">
+                    <i class="fas fa-tint"></i>
+                </div>
+            </div>
+        </div>
+    </section>-->
+    <!-- Hero Section -->
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Every Drop Counts, Every Life Matters</h1>
+                <p>Join us to create Bangladesh's largest blood donation network. Connect donors with those in need and save lives in your community.</p>
+                <div class="hero-buttons">
+                    <a href="donors/register.php" class="btn btn-primary">Donate Blood</a>
+                    <a href="receiver/register.php" class="btn btn-secondary">Request Blood</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="blood-drop-animation">
+                    <i class="fas fa-tint"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+        
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <h3>50,000+</h3>
+                    <p>Registered Donors</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-heartbeat"></i>
+                    <h3>25,000+</h3>
+                    <p>Lives Saved</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-hospital"></i>
+                    <h3>200+</h3>
+                    <p>Partner Hospitals</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h3>64</h3>
+                    <p>Districts Covered</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="about" class="features">
+        <div class="container">
+            <h2>Why Choose BloodConnect?</h2>
+            <div class="features-grid">
+                <!--<div class="feature-card">
+                    <i class="fas fa-search"></i>
+                    <h3>Smart Matching</h3>
+                    <p>AI-powered system to find the nearest available donors instantly.</p>
+                </div>
+                -->
+                <div class="feature-card">
+                    <i class="fas fa-bell"></i>
+                    <h3>Real-time Alerts</h3>
+                    <p>Get notified immediately when someone needs your blood type.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Verified Donors</h3>
+                    <p>All donors are verified for safety and authenticity.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h3>Mobile Friendly</h3>
+                    <p>Access from anywhere, anytime on any device.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blood Groups Section -->
+    <section class="blood-groups">
+        <div class="container">
+            <h2>Find Donors by Blood Group</h2>
+            <div class="blood-groups-grid">
+                <div class="blood-group-card" data-group="A+">
+                    <div class="blood-icon">A+</div>
+                    <p>Available: <span class="count">1,234</span></p>
+                </div>
+                <div class="blood-group-card" data-group="A-">
+                    <div class="blood-icon">A-</div>
+                    <p>Available: <span class="count">567</span></p>
+                </div>
+                <div class="blood-group-card" data-group="B+">
+                    <div class="blood-icon">B+</div>
+                    <p>Available: <span class="count">2,103</span></p>
+                </div>
+                <div class="blood-group-card" data-group="B-">
+                    <div class="blood-icon">B-</div>
+                    <p>Available: <span class="count">432</span></p>
+                </div>
+                <div class="blood-group-card" data-group="O+">
+                    <div class="blood-icon">O+</div>
+                    <p>Available: <span class="count">3,456</span></p>
+                </div>
+                <div class="blood-group-card" data-group="O-">
+                    <div class="blood-icon">O-</div>
+                    <p>Available: <span class="count">234</span></p>
+                </div>
+                <div class="blood-group-card" data-group="AB+">
+                    <div class="blood-icon">AB+</div>
+                    <p>Available: <span class="count">789</span></p>
+                </div>
+                <div class="blood-group-card" data-group="AB-">
+                    <div class="blood-icon">AB-</div>
+                    <p>Available: <span class="count">123</span></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Emergency Request Section -->
+    <section class="emergency-section">
+        <div class="container">
+            <div class="emergency-card">
+                <h2><i class="fas fa-exclamation-triangle"></i> Emergency Blood Needed</h2>
+                <div class="emergency-details">
+                    <div class="emergency-info">
+                        <h3>O- Blood Needed Urgently</h3>
+                        <p><i class="fas fa-hospital"></i> Dhaka Medical College Hospital</p>
+                        <p><i class="fas fa-map-marker-alt"></i> Ramna, Dhaka</p>
+                        <p><i class="fas fa-clock"></i> 2 hours ago</p>
+                    </div>
+                    <button class="btn btn-emergency">Help Now</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2>Get in Touch</h2>
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <h3>Call Us</h3>
+                            <p>+880 1700-000000</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h3>Email</h3>
+                            <p>help@bloodconnect.bd</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <h3>Address</h3>
+                            <p>Bashundhara, Dhaka, Bangladesh</p>
+                        </div>
+                    </div>
+                </div>
+                <form class="contact-form">
+                    <input type="text" placeholder="Your Name" required>
+                    <input type="email" placeholder="Your Email" required>
+                    <textarea placeholder="Your Message" rows="5" required></textarea>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <i class="fas fa-heartbeat"></i>
+                        <span>BloodConnect</span>
+                    </div>
+                    <p>Connecting hearts, saving lives across Bangladesh.</p>
+                    <div class="social-links">
+                        <a href="https://www.facebook.com/noman0002"><i class="fab fa-facebook"></i></a>
+                        <a href="mailto:malam2330151@bsds.uiu.ac.bd"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.linkedin.com/in/nomanalam"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/nomanalam"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="donors/index.php">Donate</a></li>
+                        <li><a href="receiver/index.php">Request</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Support</h3>
+                    <ul>
+                        <li><a href="#contact">Help Center</a></li>
+                        <li><a href="#contact">Privacy Policy</a></li>
+                        <li><a href="#contact">Terms of Service</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Emergency Hotline</h3>
+                    <p class="emergency-number">+880 1700-BLOOD</p>
+                    <p>24/7 Emergency Blood Support</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 BloodConnect. All rights reserved. Made with ❤️ for Bangladesh</p>
+            </div>
+        </div>
+    </footer>
+
+     <!-- Placeholder for Modals -->
+    <div id="modal-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Processing your request...</p>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Success message here</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+--- END OF FILE index.html ---
+  
