@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Blood Bank</title>
     <!-- Link to the specific CSS file for the admin section -->
-    <link rel="stylesheet" href="admin_style.css">
+    <link rel="stylesheet" href="login_style.css">
 </head>
 <body>
 
