@@ -31,7 +31,7 @@ h1, h2 {
 }
 
 h2 {
-    margin-top: 30px;
+    margin-top: 40px;
     margin-bottom: 15px;
     border-bottom: 1px solid #ddd;
     padding-bottom: 10px;
@@ -75,9 +75,14 @@ h2 {
 
 .form-inline {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     align-items: flex-end;
     flex-wrap: wrap;
+    background-color: #fdfdfd;
+    padding: 20px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    margin-bottom: 20px;
 }
 
 label {
@@ -95,7 +100,7 @@ select {
     border: 1px solid #ddd;
     border-radius: 4px;
     box-sizing: border-box;
-    min-width: 150px;
+    min-width: 180px;
 }
 
 /* --- Buttons --- */
@@ -107,6 +112,7 @@ select {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
+    height: 40px; /* Align with form inputs */
 }
 
 .btn-primary {
@@ -133,6 +139,7 @@ select {
 .btn-sm {
     padding: 5px 10px;
     font-size: 14px;
+    height: auto;
 }
 
 /* --- Tables --- */
@@ -150,6 +157,7 @@ th, td {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid #ddd;
+    vertical-align: middle;
 }
 
 th {
@@ -182,4 +190,49 @@ tr:hover {
     background-color: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
+}
+
+/* --- NEW STYLES for Request Management --- */
+.form-inline-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.form-inline-actions select {
+    min-width: 150px;
+    padding: 5px;
+    height: auto;
+}
+
+.status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+.status-open {
+    background-color: #007bff; /* Blue */
+}
+
+.status-pending {
+    background-color: #ffc107; /* Yellow */
+    color: #333;
+}
+
+.status-fulfilled, .status-completed {
+    background-color: #28a745; /* Green */
+}
+
+.status-cancelled {
+    background-color: #6c757d; /* Gray */
+}
+
+.status-none {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #ddd;
 }

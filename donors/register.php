@@ -6,7 +6,7 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get form data
+    // Get form data and trim whitespace
     $first_name = trim($_POST['first_name']);
     $last_name = trim($_POST['last_name']);
     $username = trim($_POST['username']);
@@ -18,9 +18,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $blood_type = intval($_POST['blood_type']);
     $health_status = trim($_POST['health_status']);
     
+    // **NEW**: Get additional donor data
+    $location = trim($_POST['location']);
+    $phone = trim($_POST['phone']);
+    $last_donation_date = $_POST['last_donation_date']; // This can be empty
+
     // Validation
-    if (empty($first_name) || empty($last_name) || empty($username) || empty($email) || empty($password)) {
-        $error = "All fields are required!";
+    if (empty($first_name) || empty($last_name) || empty($username) || empty($email) || empty($password) || empty($location) || empty($phone)) {
+        $error = "All fields except 'Last Donation Date' are required!";
     } elseif ($password !== $confirm_password) {
         $error = "Passwords do not match!";
     } elseif (strlen($password) < 6) {
@@ -40,29 +45,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Hash password
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             
-            // Insert into users table
-            $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, username, password, email, role) VALUES (?, ?, ?, ?, ?, 'donor')");
-            $stmt->bind_param("sssss", $first_name, $last_name, $username, $hashed_password, $email);
-            
-            if ($stmt->execute()) {
+            // Use a transaction for inserting into two tables
+            $conn->begin_transaction();
+
+            try {
+                // Insert into users table
+                $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, username, password, email, role) VALUES (?, ?, ?, ?, ?, 'donor')");
+                $stmt->bind_param("sssss", $first_name, $last_name, $username, $hashed_password, $email);
+                $stmt->execute();
                 $user_id = $conn->insert_id;
+
+                // **Handle optional date**: Set to NULL if empty
+                $last_donation_date_for_db = !empty($last_donation_date) ? $last_donation_date : NULL;
+
+                // **UPDATED**: Insert into donors table with new fields
+                $donor_stmt = $conn->prepare("INSERT INTO donors (user_id, age, blood_type_id, gender, health_status, location, phone, last_donation_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $donor_stmt->bind_param("iiisssss", $user_id, $age, $blood_type, $gender, $health_status, $location, $phone, $last_donation_date_for_db);
+                $donor_stmt->execute();
+
+                // If all goes well, commit the transaction
+                $conn->commit();
                 
-                // Insert into donors table
-                $donor_stmt = $conn->prepare("INSERT INTO donors (user_id, age, blood_type_id, gender, health_status) VALUES (?, ?, ?, ?, ?)");
-                $donor_stmt->bind_param("iiiss", $user_id, $age, $blood_type, $gender, $health_status);
-                
-                if ($donor_stmt->execute()) {
-                    $success = "Registration successful! You can now login.";
-                    // Redirect after 2 seconds
-                    header("refresh:2;url=index.php");
-                } else {
-                    $error = "Error creating donor profile: " . $conn->error;
-                }
-                $donor_stmt->close();
-            } else {
-                $error = "Error creating account: " . $conn->error;
+                $success = "Registration successful! You can now login.";
+                // Redirect after 2 seconds
+                header("refresh:2;url=index.php");
+
+            } catch (mysqli_sql_exception $exception) {
+                $conn->rollback(); // Rollback on error
+                $error = "Error during registration: " . $exception->getMessage();
+            } finally {
+                if (isset($stmt)) $stmt->close();
+                if (isset($donor_stmt)) $donor_stmt->close();
             }
-            $stmt->close();
         }
         $check_stmt->close();
     }
@@ -162,19 +176,48 @@ $blood_types_result = $conn->query($blood_types_query);
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="blood_type">
-                        <i class="fas fa-tint"></i> Blood Group
-                    </label>
-                    <select id="blood_type" name="blood_type" required>
-                        <option value="">Select Blood Group</option>
-                        <?php while ($blood_type = $blood_types_result->fetch_assoc()): ?>
-                            <option value="<?php echo $blood_type['id']; ?>"
-                                    <?php echo (isset($_POST['blood_type']) && $_POST['blood_type'] == $blood_type['id']) ? 'selected' : ''; ?>>
-                                <?php echo $blood_type['type']; ?>
-                            </option>
-                        <?php endwhile; ?>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="blood_type">
+                            <i class="fas fa-tint"></i> Blood Group
+                        </label>
+                        <select id="blood_type" name="blood_type" required>
+                            <option value="">Select Blood Group</option>
+                            <?php while ($blood_type_row = $blood_types_result->fetch_assoc()): ?>
+                                <option value="<?php echo $blood_type_row['id']; ?>"
+                                        <?php echo (isset($_POST['blood_type']) && $_POST['blood_type'] == $blood_type_row['id']) ? 'selected' : ''; ?>>
+                                    <?php echo $blood_type_row['type']; ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="last_donation_date">
+                            <i class="fas fa-calendar-alt"></i> Last Donation Date
+                        </label>
+                        <input type="date" id="last_donation_date" name="last_donation_date"
+                               value="<?php echo isset($_POST['last_donation_date']) ? htmlspecialchars($_POST['last_donation_date']) : ''; ?>">
+                        <small>Leave blank if you're a new donor.</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="location">
+                            <i class="fas fa-map-marker-alt"></i> Location
+                        </label>
+                        <input type="text" id="location" name="location" placeholder="e.g., Dhaka" required
+                               value="<?php echo isset($_POST['location']) ? htmlspecialchars($_POST['location']) : ''; ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">
+                            <i class="fas fa-phone"></i> Phone Number
+                        </label>
+                        <input type="text" id="phone" name="phone" placeholder="e.g., 01712345678" required
+                               value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>">
+                    </div>
                 </div>
 
                 <div class="form-group">

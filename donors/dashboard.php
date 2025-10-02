@@ -9,15 +9,37 @@ if (!isset($_SESSION['donor_logged_in']) || $_SESSION['donor_logged_in'] !== tru
 
 require_once '../config/db_connection.php';
 
-// Get donor information
+// Get donor's user ID from session
 $user_id = $_SESSION['user_id'];
 
-// Fetch user data
-$user_query = "SELECT u.*, d.age, d.gender, bt.type as blood_type, d.last_donation_date, d.health_status 
-               FROM users u 
-               JOIN donors d ON u.id = d.user_id 
-               JOIN blood_types bt ON d.blood_type_id = bt.id 
-               WHERE u.id = ?";
+// --- REWRITTEN & OPTIMIZED DATA FETCHING ---
+// This query now gets all stats from the 'responses' table.
+// 'Last Donation' is the MAX(response_date) for 'Accepted' responses.
+// 'Total Donations' is the COUNT of 'Accepted' responses.
+
+$user_query = "
+    SELECT
+        u.first_name, u.last_name, u.username, u.email, u.created_at,
+        d.id AS donor_id,
+        d.age,
+        d.gender,
+        d.health_status,
+        bt.type AS blood_type,
+        d.blood_type_id,
+        -- Calculate the most recent ACCEPTED response date
+        (SELECT MAX(response_date) FROM responses WHERE donor_id = d.id AND status = 'Accepted') AS calculated_last_response_date,
+        -- Count total ACCEPTED responses
+        (SELECT COUNT(*) FROM responses WHERE donor_id = d.id AND status = 'Accepted') AS total_accepted_responses
+    FROM
+        users u
+    JOIN
+        donors d ON u.id = d.user_id
+    JOIN
+        blood_types bt ON d.blood_type_id = bt.id
+    WHERE
+        u.id = ?
+";
+
 $stmt = $conn->prepare($user_query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -25,27 +47,37 @@ $result = $stmt->get_result();
 $user = $result->fetch_assoc();
 $stmt->close();
 
-// Get donation history
-$donations_query = "SELECT donation_date, quantity_ml, status, bb.name as blood_bank_name 
-                    FROM donations d 
-                    JOIN donors don ON d.donor_id = don.id 
-                    JOIN blood_banks bb ON d.blood_bank_id = bb.id 
-                    WHERE don.user_id = ? 
-                    ORDER BY donation_date DESC 
-                    LIMIT 5";
-$stmt = $conn->prepare($donations_query);
-$stmt->bind_param("i", $user_id);
+// Extract the necessary IDs for subsequent queries
+$donor_id = $user['donor_id'] ?? 0;
+$donor_blood_type_id = $user['blood_type_id'] ?? 0;
+
+// Get response history (changed from donation history)
+$response_history_query = "
+    SELECT 
+        res.response_date, 
+        res.status,
+        req.quantity_ml,
+        rec.hospital
+    FROM responses res
+    JOIN requests req ON res.request_id = req.id
+    JOIN recipients rec ON req.recipient_id = rec.id
+    WHERE res.donor_id = ?
+    ORDER BY res.response_date DESC
+    LIMIT 5
+";
+$stmt = $conn->prepare($response_history_query);
+$stmt->bind_param("i", $donor_id);
 $stmt->execute();
-$donations_result = $stmt->get_result();
+$response_history_result = $stmt->get_result();
 $stmt->close();
 
-// Calculate eligibility for next donation (90 days gap)
+// Calculate eligibility using the ACCURATE last response date
 $eligible_for_donation = true;
 $days_until_eligible = 0;
-if ($user['last_donation_date']) {
-    $last_donation = new DateTime($user['last_donation_date']);
+if ($user['calculated_last_response_date']) {
+    $last_response_date = new DateTime($user['calculated_last_response_date']);
     $today = new DateTime();
-    $diff = $today->diff($last_donation);
+    $diff = $today->diff($last_response_date);
     $days_passed = $diff->days;
     
     if ($days_passed < 90) {
@@ -54,28 +86,37 @@ if ($user['last_donation_date']) {
     }
 }
 
-// Get total donation count
-$count_query = "SELECT COUNT(*) as total_donations 
-                FROM donations d 
-                JOIN donors don ON d.donor_id = don.id 
-                WHERE don.user_id = ? AND d.status = 'Completed'";
-$stmt = $conn->prepare($count_query);
-$stmt->bind_param("i", $user_id);
+// Get active blood requests that match donor’s blood type (This query is unchanged)
+$requests_query = "
+    SELECT
+        r.*,
+        rec.hospital,
+        u.first_name,
+        u.last_name,
+        bt.type AS blood_type_needed
+    FROM
+        requests r
+    JOIN
+        recipients rec ON r.recipient_id = rec.id
+    JOIN
+        users u ON rec.user_id = u.id
+    JOIN
+        blood_types bt ON r.blood_type_id = bt.id
+    JOIN
+        -- Join directly on the compatibility table
+        compatibility comp ON r.blood_type_id = comp.recipient_type_id
+    WHERE
+        r.status = 'Open'
+        AND comp.donor_type_id = ? -- Filter by the donor's ID here
+    ORDER BY
+        r.request_date DESC
+    LIMIT 5;
+";
+$stmt = $conn->prepare($requests_query);
+$stmt->bind_param("i", $donor_blood_type_id);
 $stmt->execute();
-$count_result = $stmt->get_result();
-$donation_count = $count_result->fetch_assoc();
+$requests_result = $stmt->get_result();
 $stmt->close();
-
-// Get active blood requests matching donor's blood type
-$requests_query = "SELECT r.*, rec.hospital, u.first_name, u.last_name, bt.type as blood_type_needed 
-                   FROM requests r 
-                   JOIN recipients rec ON r.recipient_id = rec.id 
-                   JOIN users u ON rec.user_id = u.id 
-                   JOIN blood_types bt ON r.blood_type_id = bt.id 
-                   WHERE r.status = 'Open' 
-                   ORDER BY r.request_date DESC 
-                   LIMIT 5";
-$requests_result = $conn->query($requests_query);
 ?>
 
 <!DOCTYPE html>
@@ -89,7 +130,6 @@ $requests_result = $conn->query($requests_query);
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Header -->
         <div class="dashboard-header">
             <div class="dashboard-title">
                 <i class="fas fa-hand-holding-heart"></i>
@@ -105,15 +145,12 @@ $requests_result = $conn->query($requests_query);
             </div>
         </div>
 
-        <!-- Main Content -->
         <div class="dashboard-content">
-            <!-- Welcome Card -->
             <div class="welcome-card">
                 <h2>Welcome back, <?php echo htmlspecialchars($user['first_name']); ?>!</h2>
                 <p>Thank you for being a life-saving hero. Your blood type <strong><?php echo $user['blood_type']; ?></strong> can save lives.</p>
             </div>
 
-            <!-- Eligibility Status -->
             <div class="eligibility-card <?php echo $eligible_for_donation ? 'eligible' : 'not-eligible'; ?>">
                 <div class="eligibility-icon">
                     <i class="fas <?php echo $eligible_for_donation ? 'fa-check-circle' : 'fa-clock'; ?>"></i>
@@ -121,7 +158,7 @@ $requests_result = $conn->query($requests_query);
                 <div class="eligibility-content">
                     <?php if ($eligible_for_donation): ?>
                         <h3>You are eligible to donate!</h3>
-                        <p>You can donate blood now. Contact a blood bank to schedule your donation.</p>
+                        <p>You can respond to a request now.</p>
                     <?php else: ?>
                         <h3>Not eligible yet</h3>
                         <p>You can donate again in <strong><?php echo $days_until_eligible; ?> days</strong> (90 days required between donations)</p>
@@ -129,7 +166,6 @@ $requests_result = $conn->query($requests_query);
                 </div>
             </div>
 
-            <!-- Stats Grid -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <i class="fas fa-tint"></i>
@@ -138,12 +174,12 @@ $requests_result = $conn->query($requests_query);
                 </div>
                 <div class="stat-card">
                     <i class="fas fa-heart"></i>
-                    <h3><?php echo $donation_count['total_donations']; ?></h3>
+                    <h3><?php echo $user['total_accepted_responses']; ?></h3>
                     <p>Total Donations</p>
                 </div>
                 <div class="stat-card">
                     <i class="fas fa-calendar-alt"></i>
-                    <h3><?php echo $user['last_donation_date'] ? date('M d, Y', strtotime($user['last_donation_date'])) : 'Never'; ?></h3>
+                    <h3><?php echo $user['calculated_last_response_date'] ? date('M d, Y', strtotime($user['calculated_last_response_date'])) : 'Never'; ?></h3>
                     <p>Last Donation</p>
                 </div>
                 <div class="stat-card">
@@ -153,7 +189,6 @@ $requests_result = $conn->query($requests_query);
                 </div>
             </div>
 
-            <!-- Profile Information -->
             <div class="section-card">
                 <div class="section-header">
                     <h3><i class="fas fa-user"></i> Your Profile</h3>
@@ -186,31 +221,30 @@ $requests_result = $conn->query($requests_query);
                 </div>
             </div>
 
-            <!-- Donation History -->
             <div class="section-card">
                 <div class="section-header">
-                    <h3><i class="fas fa-history"></i> Recent Donation History</h3>
+                    <h3><i class="fas fa-history"></i> Recent Response History</h3>
                 </div>
-                <?php if ($donations_result->num_rows > 0): ?>
+                <?php if ($response_history_result->num_rows > 0): ?>
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>Date</th>
-                                    <th>Blood Bank</th>
+                                    <th>Recipient Hospital</th>
                                     <th>Quantity</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php while ($donation = $donations_result->fetch_assoc()): ?>
+                                <?php while ($response = $response_history_result->fetch_assoc()): ?>
                                     <tr>
-                                        <td><?php echo date('M d, Y', strtotime($donation['donation_date'])); ?></td>
-                                        <td><?php echo htmlspecialchars($donation['blood_bank_name']); ?></td>
-                                        <td><?php echo $donation['quantity_ml']; ?> ml</td>
+                                        <td><?php echo date('M d, Y', strtotime($response['response_date'])); ?></td>
+                                        <td><?php echo htmlspecialchars($response['hospital']); ?></td>
+                                        <td><?php echo $response['quantity_ml']; ?> ml</td>
                                         <td>
-                                            <span class="status-badge status-<?php echo strtolower($donation['status']); ?>">
-                                                <?php echo $donation['status']; ?>
+                                            <span class="status-badge status-<?php echo strtolower($response['status']); ?>">
+                                                <?php echo $response['status']; ?>
                                             </span>
                                         </td>
                                     </tr>
@@ -221,15 +255,14 @@ $requests_result = $conn->query($requests_query);
                 <?php else: ?>
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
-                        <p>No donation history yet. Make your first donation and start saving lives!</p>
+                        <p>You have not responded to any requests yet.</p>
                     </div>
                 <?php endif; ?>
             </div>
 
-            <!-- Active Blood Requests -->
             <div class="section-card">
                 <div class="section-header">
-                    <h3><i class="fas fa-hand-holding-medical"></i> Active Blood Requests</h3>
+                    <h3><i class="fas fa-hand-holding-medical"></i> Compatible Blood Requests</h3>
                 </div>
                 <?php if ($requests_result->num_rows > 0): ?>
                     <div class="requests-list">
@@ -248,6 +281,9 @@ $requests_result = $conn->query($requests_query);
                                     <span class="status-badge status-<?php echo strtolower($request['status']); ?>">
                                         <?php echo $request['status']; ?>
                                     </span>
+                                    <a href="respond.php?request_id=<?php echo $request['id']; ?>" class="btn btn-primary">
+                                        <i class="fas fa-hand-holding-heart"></i> Respond
+                                    </a>
                                 </div>
                             </div>
                         <?php endwhile; ?>
@@ -255,7 +291,7 @@ $requests_result = $conn->query($requests_query);
                 <?php else: ?>
                     <div class="empty-state">
                         <i class="fas fa-inbox"></i>
-                        <p>No active blood requests at the moment.</p>
+                        <p>No matching blood requests at the moment.</p>
                     </div>
                 <?php endif; ?>
             </div>
