@@ -131,7 +131,7 @@ $stmt->close();
                         <p>Create a new blood request and notify available donors in your area</p>
                     </div>
                 </div>
-                <button class="btn btn-primary btn-large" onclick="alert('Request form feature coming soon!')">
+                <button class="btn btn-primary btn-large" onclick="window.location.href='create_request.php'">
                     <i class="fas fa-hand-holding-medical"></i> Create Blood Request
                 </button>
             </div>
