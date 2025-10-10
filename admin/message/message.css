@@ -1,0 +1,280 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7fa;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    padding: 30px;
+    overflow: hidden;
+}
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #e0e6ed;
+    padding-bottom: 20px;
+}
+
+.page-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.page-header i {
+    font-size: 24px;
+    color: #3498db;
+}
+
+.header-actions {
+    display: flex;
+    gap: 15px;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #fff;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+/* Alert */
+.alert {
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+.alert i {
+    font-size: 18px;
+}
+
+/* Messages Table */
+.messages-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.messages-table thead {
+    background-color: #f8f9fa;
+}
+
+.messages-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    color: #495057;
+    border-bottom: 1px solid #e0e6ed;
+}
+
+.messages-table td {
+    padding: 15px;
+    font-size: 14px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.messages-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.messages-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Unread Row */
+.unread-row {
+    background-color: #e3f2fd;
+    font-weight: 500;
+}
+
+/* Message Content */
+.message-content {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px; /* Adjust based on layout */
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.status-unread {
+    background-color: #ffe69c;
+    color: #856404;
+}
+
+.status-read {
+    background-color: #c3e6cb;
+    color: #155724;
+}
+
+.status-replied {
+    background-color: #b8daff;
+    color: #004085;
+}
+
+/* Status Action Select */
+.status-action-select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    width: 100%;
+}
+
+.status-action-select:focus {
+    border-color: #80bdff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    .page-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .messages-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .messages-table thead,
+    .messages-table tbody,
+    .messages-table th,
+    .messages-table td,
+    .messages-table tr {
+        display: block;
+    }
+
+    .messages-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .messages-table tr {
+        border: 1px solid #e9ecef;
+        margin-bottom: 10px;
+        border-radius: 8px;
+    }
+
+    .messages-table td {
+        border: none;
+        border-bottom: 1px solid #e9ecef;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+    }
+
+    .messages-table td:before {
+        position: absolute;
+        top: 50%;
+        left: 15px;
+        transform: translateY(-50%);
+        white-space: nowrap;
+        font-weight: 600;
+        content: attr(data-label);
+        text-align: left;
+    }
+
+    .messages-table td:last-child {
+        border-bottom: none;
+    }
+
+    /* Add data-label to td elements for mobile */
+    .messages-table td:nth-child(1) { data-label: "Received"; }
+    .messages-table td:nth-child(2) { data-label: "Name"; }
+    .messages-table td:nth-child(3) { data-label: "Email"; }
+    .messages-table td:nth-child(4) { data-label: "Message"; }
+    .messages-table td:nth-child(5) { data-label: "Status"; }
+    .messages-table td:nth-child(6) { data-label: "Action"; }
+
+    .message-content {
+        max-width: none;
+        white-space: normal;
+    }
+}

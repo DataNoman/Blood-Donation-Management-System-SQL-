@@ -199,7 +199,7 @@ $blood_types_result = $conn->query($blood_types_query);
 
                 <div class="form-footer">
                     <p>Already have an account? <a href="index.php">Login here</a></p>
-                    <p><a href="../index.html">Back to Home</a></p>
+                    <p><a href="../index.php">Back to Home</a></p>
                 </div>
             </form>
         </div>

@@ -94,11 +94,16 @@ $fulfilled_count_result = $stmt->get_result();
 $fulfilled_count = $fulfilled_count_result->fetch_assoc();
 $stmt->close();
 
-// --------------------
 // Get matched donors (from responses table)
-// --------------------
-$matches_query = "SELECT r.id as response_id, r.response_date, r.status as response_status,
-                         don.age, u.first_name, u.last_name, bt.type as blood_type
+$matches_query = "SELECT 
+                    r.id as response_id, 
+                    r.response_date, 
+                    r.status as response_status,
+                    req.id as request_id,
+                    don.age, 
+                    u.first_name, 
+                    u.last_name, 
+                    bt.type as blood_type
                   FROM responses r
                   JOIN requests req ON r.request_id = req.id
                   JOIN donors don ON r.donor_id = don.id
@@ -107,6 +112,8 @@ $matches_query = "SELECT r.id as response_id, r.response_date, r.status as respo
                   WHERE req.recipient_id = ?
                   ORDER BY r.response_date DESC
                   LIMIT 5";
+// ... execute query ...
+
 $stmt = $conn->prepare($matches_query);
 $stmt->bind_param("i", $recipient_id);
 $stmt->execute();
@@ -132,7 +139,7 @@ $stmt->close();
                 <h1>Receiver Dashboard</h1>
             </div>
             <div class="dashboard-nav">
-                <a href="../index.html" class="btn btn-secondary">
+                <a href="../index.php" class="btn btn-secondary">
                     <i class="fas fa-home"></i> Home
                 </a>
                 <a href="logout.php" class="btn btn-danger">
@@ -290,6 +297,12 @@ $stmt->close();
                                 <div class="donor-badge">
                                     <i class="fas fa-check-circle"></i>
                                     <span>Matched</span>
+                                    
+                                    <?php if ($match['response_status'] == 'Accepted'): ?>
+                                        <a href="message.php?request_id=<?php echo $match['request_id']; ?>" class="btn btn-primary" style="margin-top: 10px;">
+                                            <i class="fas fa-comments"></i> Message
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endwhile; ?>
