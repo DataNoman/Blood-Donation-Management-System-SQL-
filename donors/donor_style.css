@@ -1,4 +1,4 @@
-/* ===== General Reset ===== */
+/* ===== General Reset & Base Styles ===== */
 * {
     margin: 0;
     padding: 0;
@@ -19,16 +19,17 @@ body {
     padding: 20px;
 }
 
-/* ===== Header ===== */
+/* ===== Header & Navigation ===== */
 .dashboard-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #e63946;
+    background: #e63946; /* Primary Red */
     color: #fff;
     padding: 15px 20px;
     border-radius: 10px;
     margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-title {
@@ -56,41 +57,84 @@ body {
     transition: all 0.3s ease;
 }
 
+/* Base Button Styles */
 .btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center; /* Center content */
     gap: 6px;
     font-size: 14px;
     cursor: pointer;
+    text-align: center;
+    text-decoration: none; /* Ensure anchor links look like buttons */
+    border: none;
+    padding: 8px 15px; /* Consistent padding */
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    white-space: nowrap; /* Prevent text wrap */
 }
 
 .btn-secondary {
     background: #fff;
     color: #e63946;
-    border: 1px solid #fff;
+    border: 1px solid #e63946; /* Border for better definition */
 }
 
 .btn-secondary:hover {
-    background: #f1f1f1;
+    background: #fddede; /* Light hover for secondary */
+    color: #c9182b;
+    border-color: #c9182b;
 }
 
 .btn-danger {
     background: #fff;
     color: #e63946;
-    border: 1px solid #fff;
+    border: 1px solid #e63946;
 }
 
 .btn-danger:hover {
     background: #fddede;
+    color: #c9182b;
+    border-color: #c9182b;
 }
 
-/* ===== Welcome Card ===== */
+/* Primary Button (Used in Request Footer) - ENHANCED */
+.btn-primary {
+    background: #e63946; /* Primary Red */
+    color: #fff !important; /* Ensure text is white */
+    padding: 8px 16px; /* Slightly larger padding */
+    border-radius: 20px; /* Pill shape for better look */
+    font-weight: 600;
+    box-shadow: 0 4px 6px rgba(230, 57, 70, 0.3); /* Subtle shadow */
+}
+
+.btn-primary:hover {
+    background: #c9182b; /* Darker Red on hover */
+    box-shadow: 0 6px 8px rgba(201, 24, 43, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Disabled Button */
+.btn-disabled {
+    background-color: #ccc !important;
+    color: #666 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+    border: none; /* Remove any border */
+    padding: 8px 16px;
+    border-radius: 20px;
+    box-shadow: none;
+}
+
+/* ===== Card Styles ===== */
 .welcome-card {
     background: #fff;
     border-left: 5px solid #e63946;
     padding: 20px;
     border-radius: 10px;
     margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .welcome-card h2 {
@@ -98,7 +142,6 @@ body {
     margin-bottom: 10px;
 }
 
-/* ===== Eligibility Card ===== */
 .eligibility-card {
     display: flex;
     align-items: center;
@@ -109,11 +152,11 @@ body {
 }
 
 .eligibility-card.eligible {
-    background: #2a9d8f;
+    background: #10761c; /* Green */
 }
 
 .eligibility-card.not-eligible {
-    background: #e76f51;
+    background: #f70707; /* Strong Red */
 }
 
 .eligibility-icon {
@@ -124,6 +167,29 @@ body {
 .eligibility-content h3 {
     font-size: 18px;
     margin-bottom: 6px;
+}
+
+.section-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Allow space for eligibility message */
+    gap: 10px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f1f1f1;
+    padding-bottom: 8px;
+}
+
+.section-header h3 {
+    font-size: 18px;
+    font-weight: 600;
 }
 
 /* ===== Stats Grid ===== */
@@ -140,11 +206,12 @@ body {
     padding: 20px;
     text-align: center;
     box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .stat-card:hover {
     transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
 }
 
 .stat-card i {
@@ -156,29 +223,7 @@ body {
 .stat-card h3 {
     font-size: 20px;
     margin-bottom: 5px;
-}
-
-/* ===== Section Card ===== */
-.section-card {
-    background: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
-
-.section-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    border-bottom: 2px solid #f1f1f1;
-    padding-bottom: 8px;
-}
-
-.section-header h3 {
-    font-size: 18px;
-    font-weight: 600;
+    color: #333;
 }
 
 /* ===== Profile Grid ===== */
@@ -188,14 +233,19 @@ body {
     gap: 15px;
 }
 
+.profile-item {
+    font-size: 14px;
+}
+
 .profile-item strong {
     display: block;
     font-weight: 600;
     margin-bottom: 3px;
     color: #555;
+    font-size: 15px;
 }
 
-/* ===== Tables ===== */
+/* ===== Tables and Badges ===== */
 .table-responsive {
     overflow-x: auto;
 }
@@ -223,23 +273,32 @@ body {
     padding: 5px 10px;
     border-radius: 20px;
     font-size: 12px;
-    font-weight: 500;
-    color: #fff;
+    font-weight: 600;
+    color: #100101;
+    display: inline-block;
 }
 
-.status-completed {
-    background: #2a9d8f;
+.status-accepted, .status-completed {
+    background: #a3e810; /* Lighter Green */
+    color: #10761c;
 }
 
 .status-pending {
-    background: #f4a261;
+    background: #f4a261; /* Orange */
+    color: #b75700;
 }
 
 .status-cancelled {
-    background: #e76f51;
+    background: #ffaaaa; /* Light Red */
+    color: #ec0707;
 }
 
-/* ===== Requests List ===== */
+.status-open {
+    background: #cce5ff;
+    color: #004085;
+}
+
+/* ===== Requests List - ENHANCED STYLES ===== */
 .requests-list {
     display: flex;
     flex-direction: column;
@@ -248,68 +307,180 @@ body {
 
 .request-item {
     border: 1px solid #eee;
-    padding: 15px;
-    border-radius: 8px;
+    padding: 20px; /* Increased padding */
+    border-radius: 10px;
     background: #fafafa;
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden; /* Important for overlay */
 }
 
 .request-item:hover {
     background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #e63946;
 }
 
 .request-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
+    align-items: center;
+    margin-bottom: 15px; /* Increased margin */
+    border-bottom: 1px solid #f1f1f1;
+    padding-bottom: 10px;
 }
 
 .blood-type-badge {
     background: #e63946;
     color: #fff;
-    padding: 5px 12px;
+    padding: 6px 14px;
     border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
 .request-date {
     font-size: 13px;
     color: #777;
+    font-style: italic;
+}
+
+.request-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns for details */
+    gap: 10px;
+    margin-bottom: 15px;
 }
 
 .request-body p {
-    margin: 4px 0;
+    margin: 0;
     font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #555;
+}
+
+.request-body p i {
+    color: #e63946; /* Icon color */
+    font-size: 16px;
+}
+
+.request-body .label {
+    font-weight: 600;
+    color: #333;
+}
+
+.request-body .request-name {
+    grid-column: 1 / -1; /* Full width for the name/title */
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 5px !important;
+}
+
+.request-urgency .urgency {
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Urgency Colors */
+.request-urgency .high {
+    color: #ec0707;
+}
+.request-urgency .medium {
+    color: #f4a261;
+}
+.request-urgency .low {
+    color: #10761c;
+}
+
+.request-contact .contact-link {
+    color: #e63946;
+    text-decoration: none;
+    font-weight: 500;
+}
+.request-contact .contact-link:hover {
+    text-decoration: underline;
+}
+.request-contact .text-muted {
+    color: #6c757d;
 }
 
 .request-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 10px;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f1f1;
 }
 
-.request-footer .btn-primary {
-    background: #e63946;
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 6px;
-    text-decoration: none;
+.request-footer .btn-primary,
+.request-footer .btn-disabled {
+    flex-grow: 1; /* Make buttons expand */
+    margin: 0 5px; /* Spacing between buttons */
+    max-width: 48%; /* Limit button width for two columns */
+    font-size: 15px;
+    padding: 10px 15px; /* Better size for main actions */
+}
+
+/* Eligibility Overlay (Lock Screen) */
+.request-item.not-eligible {
+    opacity: 0.8;
+    position: relative;
+    /* Remove hover effect when locked */
+}
+.request-item.not-eligible:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+    border-color: #eee;
+    transform: none;
+}
+
+.eligibility-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95); /* Slightly darker overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    z-index: 10;
+}
+
+.eligibility-message {
+    text-align: center;
+    padding: 20px;
+    color: #d9534f;
+}
+
+.eligibility-message i {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.eligibility-message h4 {
+    margin: 10px 0;
+    font-size: 18px;
+}
+
+.eligibility-message p {
+    margin: 5px 0;
     font-size: 14px;
-    transition: background 0.3s ease;
 }
 
-.request-footer .btn-primary:hover {
-    background: #c9182b;
-}
 
 /* ===== Empty States ===== */
 .empty-state {
     text-align: center;
     color: #777;
     padding: 20px;
+    background: #fefefe;
+    border-radius: 8px;
+    border: 1px dashed #e0e0e0;
 }
 
 .empty-state i {
@@ -318,16 +489,63 @@ body {
     margin-bottom: 10px;
 }
 
-/* ===== Responsive ===== */
+/* ===== Responsive Adjustments (Mobile First) ===== */
 @media (max-width: 768px) {
+    .dashboard-container {
+        margin: 20px 10px;
+        padding: 0;
+    }
+
     .dashboard-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
+        padding: 15px;
+        border-radius: 0; /* Full width header for small screens */
     }
 
     .dashboard-nav {
         display: flex;
         flex-wrap: wrap;
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .dashboard-nav a {
+        margin: 5px 0 0 0;
+        flex: 1 1 auto;
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+
+    /* Adjust grids for smaller screens */
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+    
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Request List adjustments for mobile */
+    .request-item {
+        padding: 15px;
+    }
+    
+    .request-body {
+        grid-template-columns: 1fr; /* Stack all details vertically */
+    }
+
+    .request-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .request-footer .btn-primary,
+    .request-footer .btn-disabled {
+        flex-grow: 1; 
+        max-width: 100%; /* Full width buttons */
+        margin: 0;
     }
 }

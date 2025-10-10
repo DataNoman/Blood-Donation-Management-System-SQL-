@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $check_stmt->close();
     }
     
-    // **NEW ACTION**: Update Request and Response Status
+    // **ENHANCED ACTION**: Update Request and Response Status with Auto-Rejection Logic
     if ($_POST['action'] == 'update_status') {
         $request_id = $_POST['request_id'];
         $response_id = $_POST['response_id'];
@@ -94,31 +94,81 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         // Determine the new statuses based on the selected action
         if ($new_status_action == 'complete') {
             $request_status = 'Fulfilled';
-            // In your schema, response status is 'Pending','Accepted','Rejected'. Let's use 'Accepted'.
-            $response_status = 'Accepted'; 
+            $response_status = 'Accepted';
         } elseif ($new_status_action == 'cancel') {
             $request_status = 'Open'; // Request goes back to open
-            // In your schema, let's use 'Rejected'.
             $response_status = 'Rejected';
         }
 
         if ($request_id && $response_id && $request_status && $response_status) {
-            // Use a transaction to ensure both updates succeed or fail together
+            // Use a transaction to ensure all updates succeed or fail together
             $conn->begin_transaction();
             try {
-                // Update responses table
+                // **STEP 1**: Get the donor_id from the current response
+                $get_donor_stmt = $conn->prepare("SELECT donor_id FROM responses WHERE id = ?");
+                $get_donor_stmt->bind_param("i", $response_id);
+                $get_donor_stmt->execute();
+                $donor_result = $get_donor_stmt->get_result();
+                $donor_row = $donor_result->fetch_assoc();
+                $donor_id = $donor_row['donor_id'];
+                $get_donor_stmt->close();
+
+                // **STEP 2**: Update the selected response
                 $stmt_resp = $conn->prepare("UPDATE responses SET status = ? WHERE id = ?");
                 $stmt_resp->bind_param("si", $response_status, $response_id);
                 $stmt_resp->execute();
+                $stmt_resp->close();
 
-                // Update requests table
+                // **STEP 3**: Update the request status
                 $stmt_req = $conn->prepare("UPDATE requests SET status = ? WHERE id = ?");
                 $stmt_req->bind_param("si", $request_status, $request_id);
                 $stmt_req->execute();
+                $stmt_req->close();
+
+                // **STEP 4**: If the response was ACCEPTED, reject all other PENDING responses from the same donor
+                if ($new_status_action == 'complete' && $donor_id) {
+                    // Reject all other pending responses from this donor (excluding the current one)
+                    $reject_stmt = $conn->prepare("
+                        UPDATE responses 
+                        SET status = 'Rejected' 
+                        WHERE donor_id = ? 
+                        AND status = 'Pending' 
+                        AND id != ?
+                    ");
+                    $reject_stmt->bind_param("ii", $donor_id, $response_id);
+                    $reject_affected = $reject_stmt->execute();
+                    $rejected_count = $reject_stmt->affected_rows;
+                    $reject_stmt->close();
+
+                    // Update the request status for those rejected responses back to 'Open'
+                    if ($rejected_count > 0) {
+                        $reopen_requests_stmt = $conn->prepare("
+                            UPDATE requests r
+                            INNER JOIN responses res ON r.id = res.request_id
+                            SET r.status = 'Open'
+                            WHERE res.donor_id = ? 
+                            AND res.status = 'Rejected'
+                            AND res.id != ?
+                            AND r.id != ?
+                        ");
+                        $reopen_requests_stmt->bind_param("iii", $donor_id, $response_id, $request_id);
+                        $reopen_requests_stmt->execute();
+                        $reopen_requests_stmt->close();
+                    }
+
+                    $conn->commit();
+                    $message = "Status updated successfully! The donor's donation has been accepted.";
+                    if ($rejected_count > 0) {
+                        $message .= " {$rejected_count} other pending response(s) from this donor were automatically rejected and those requests reopened.";
+                    }
+                    $message_type = 'success';
+                } else {
+                    // Just a regular rejection, no additional logic needed
+                    $conn->commit();
+                    $message = "Status updated successfully!";
+                    $message_type = 'success';
+                }
                 
-                $conn->commit();
-                $message = "Status updated successfully!";
-                $message_type = 'success';
             } catch (mysqli_sql_exception $exception) {
                 $conn->rollback();
                 $message = "Error updating status: " . $exception->getMessage();
@@ -167,7 +217,7 @@ $blood_types_result_for_form = $conn->query("SELECT * FROM blood_types ORDER BY 
 $blood_banks_result_for_form = $conn->query("SELECT id, name FROM blood_banks ORDER BY name ASC");
 
 
-// **NEW & CORRECTED**: 5. Donor Search Logic
+// 5. Donor Search Logic
 $donor_search_results = [];
 $search_location = '';
 $search_blood_type_id = '';
@@ -175,7 +225,6 @@ if (isset($_GET['search'])) {
     $search_location = $_GET['location'] ?? '';
     $search_blood_type_id = $_GET['blood_type'] ?? '';
 
-    // CORRECTED: Selects from `donors` for location/phone and CONCATs name from `users`
     $sql = "SELECT CONCAT(u.first_name, ' ', u.last_name) AS name, u.email, d.phone, d.location, bt.type as blood_type
             FROM users u
             JOIN donors d ON u.id = d.user_id
@@ -186,7 +235,7 @@ if (isset($_GET['search'])) {
     $types = '';
 
     if (!empty($search_location)) {
-        $sql .= " AND d.location LIKE ?"; // CORRECTED: Searches d.location
+        $sql .= " AND d.location LIKE ?";
         $types .= 's';
         $params[] = '%' . $search_location . '%';
     }
@@ -208,8 +257,7 @@ if (isset($_GET['search'])) {
     $stmt->close();
 }
 
-// **NEW & CORRECTED**: 6. Fetch Requests and Responses
-// CORRECTED: Uses CONCAT() for names to match your DB schema
+// **ENHANCED**: 6. Fetch Requests and Responses with Eligibility Check
 $requests_responses_result = $conn->query("
     SELECT
         req.id AS request_id,
@@ -219,7 +267,21 @@ $requests_responses_result = $conn->query("
         bt.type AS blood_type,
         req.quantity_ml,
         req.status AS request_status,
-        res.status AS response_status
+        res.status AS response_status,
+        res.donor_id,
+        -- Check if donor has an accepted donation in the last 90 days
+        (SELECT COUNT(*) 
+         FROM responses r2 
+         WHERE r2.donor_id = res.donor_id 
+         AND r2.status = 'Accepted' 
+         AND r2.response_date >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+        ) AS recent_accepted_donations,
+        -- Get the most recent accepted donation date
+        (SELECT MAX(r3.response_date)
+         FROM responses r3
+         WHERE r3.donor_id = res.donor_id
+         AND r3.status = 'Accepted'
+        ) AS last_donation_date
     FROM requests req
     LEFT JOIN responses res ON req.id = res.request_id
     JOIN recipients rec ON req.recipient_id = rec.id
@@ -229,6 +291,7 @@ $requests_responses_result = $conn->query("
     LEFT JOIN users donor_user ON d.user_id = donor_user.id
     WHERE req.status IN ('Open', 'Pending') OR res.status = 'Pending'
     ORDER BY req.request_date DESC
+    LIMIT 20
 ");
 
 ?>
@@ -239,14 +302,37 @@ $requests_responses_result = $conn->query("
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="admin_style.css">
+    <style>
+        .donor-ineligible {
+            color: #d9534f;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        .warning-badge {
+            background-color: #f0ad4e;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+        .info-text {
+            color: #666;
+            font-size: 0.85em;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-wrapper">
         <div class="header-bar">
             <h1>Admin Dashboard</h1>
-            <form action="logout.php" method="post">
-                <button type="submit" class="btn btn-danger">Logout</button>
-            </form>
+            <div class="header-actions">
+                <a href="message/contact_message.php" class="btn btn-primary">View Messages</a>
+                <form action="logout.php" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </div>
         </div>
 
         <?php if ($message): ?>
@@ -279,6 +365,9 @@ $requests_responses_result = $conn->query("
         <?php endif; ?>
 
         <h2>Manage Requests & Responses</h2>
+        <div class="message" style="background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;">
+            <strong>ℹ️ Note:</strong> When you accept a donor's response, all other pending responses from the same donor will be automatically rejected, and the donor will become ineligible for 90 days from the donation date.
+        </div>
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -289,31 +378,83 @@ $requests_responses_result = $conn->query("
                         <th>Donor</th>
                         <th>Request Status</th>
                         <th>Response Status</th>
+                        <th>Eligibility Info</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ($requests_responses_result->num_rows > 0): ?>
                         <?php while($row = $requests_responses_result->fetch_assoc()): ?>
+                        <?php 
+                            // Calculate eligibility
+                            $is_eligible = true;
+                            $days_until_eligible = 0;
+                            $eligibility_text = '';
+                            
+                            if ($row['donor_id'] && $row['last_donation_date']) {
+                                $last_donation = new DateTime($row['last_donation_date']);
+                                $today = new DateTime();
+                                $diff = $today->diff($last_donation);
+                                $days_passed = $diff->days;
+                                
+                                if ($days_passed < 90) {
+                                    $is_eligible = false;
+                                    $days_until_eligible = 90 - $days_passed;
+                                    $eligibility_text = "Ineligible ({$days_until_eligible} days left)";
+                                } else {
+                                    $eligibility_text = "Eligible";
+                                }
+                            } else {
+                                $eligibility_text = $row['donor_name'] ? "Eligible (First donation)" : "N/A";
+                            }
+                        ?>
                         <tr>
                             <td><?php echo $row['request_id']; ?></td>
                             <td><?php echo htmlspecialchars($row['recipient_name']); ?></td>
                             <td><?php echo htmlspecialchars($row['blood_type']); ?></td>
-                            <td><?php echo htmlspecialchars($row['donor_name'] ?? 'N/A'); ?></td>
+                            <td>
+                                <?php echo htmlspecialchars($row['donor_name'] ?? 'N/A'); ?>
+                                <?php if ($row['donor_id'] && !$is_eligible && $row['response_status'] == 'Pending'): ?>
+                                    <span class="warning-badge">⚠️ INELIGIBLE</span>
+                                <?php endif; ?>
+                            </td>
                             <td><span class="status status-<?php echo strtolower(htmlspecialchars($row['request_status'])); ?>"><?php echo htmlspecialchars($row['request_status']); ?></span></td>
                             <td><span class="status status-<?php echo strtolower(htmlspecialchars($row['response_status'] ?? 'none')); ?>"><?php echo htmlspecialchars($row['response_status'] ?? 'No Response'); ?></span></td>
                             <td>
+                                <?php if ($row['donor_id']): ?>
+                                    <span class="<?php echo !$is_eligible ? 'donor-ineligible' : ''; ?>">
+                                        <?php echo $eligibility_text; ?>
+                                    </span>
+                                    <?php if ($row['last_donation_date']): ?>
+                                        <br><span class="info-text">Last: <?php echo date('M d, Y', strtotime($row['last_donation_date'])); ?></span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    N/A
+                                <?php endif; ?>
+                            </td>
+                            <td>
                                 <?php if ($row['response_id'] && $row['response_status'] == 'Pending'): ?>
-                                    <form action="dashboard.php" method="POST" class="form-inline-actions">
-                                        <input type="hidden" name="action" value="update_status">
-                                        <input type="hidden" name="request_id" value="<?php echo $row['request_id']; ?>">
-                                        <input type="hidden" name="response_id" value="<?php echo $row['response_id']; ?>">
-                                        <select name="new_status">
-                                            <option value="complete">Mark as Accepted/Fulfilled</option>
-                                            <option value="cancel">Mark as Rejected</option>
-                                        </select>
-                                        <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                                    </form>
+                                    <?php if (!$is_eligible && $row['donor_id']): ?>
+                                        <span class="donor-ineligible">⚠️ Cannot accept - Donor not eligible</span>
+                                        <form action="dashboard.php" method="POST" class="form-inline-actions" style="margin-top: 5px;">
+                                            <input type="hidden" name="action" value="update_status">
+                                            <input type="hidden" name="request_id" value="<?php echo $row['request_id']; ?>">
+                                            <input type="hidden" name="response_id" value="<?php echo $row['response_id']; ?>">
+                                            <input type="hidden" name="new_status" value="cancel">
+                                            <button type="submit" class="btn btn-danger btn-sm">Reject Only</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <form action="dashboard.php" method="POST" class="form-inline-actions">
+                                            <input type="hidden" name="action" value="update_status">
+                                            <input type="hidden" name="request_id" value="<?php echo $row['request_id']; ?>">
+                                            <input type="hidden" name="response_id" value="<?php echo $row['response_id']; ?>">
+                                            <select name="new_status">
+                                                <option value="complete">Mark as Accepted/Fulfilled</option>
+                                                <option value="cancel">Mark as Rejected</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                        </form>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     No action required
                                 <?php endif; ?>
@@ -321,7 +462,7 @@ $requests_responses_result = $conn->query("
                         </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
-                        <tr><td colspan="7">No active requests or pending responses.</td></tr>
+                        <tr><td colspan="8">No active requests or pending responses.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
